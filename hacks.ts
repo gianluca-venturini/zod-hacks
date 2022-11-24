@@ -1,6 +1,39 @@
 import { z } from './src/index';
 
 //
+// Modifying Zod internals
+//
+
+// This is module augmentation 
+// https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
+// Augmenting base class with documentation methods
+declare module "./src/index" {
+    interface ZodType {
+        doc(doc: SimpleDoc): this;
+        readonly documentation: SimpleDoc;
+    }
+}
+
+interface SimpleDoc {
+    description: string;
+    hidden?: boolean;
+}
+
+z.ZodType.prototype.doc = function(doc: SimpleDoc) {
+    const This = (this as any).constructor;
+    return new This({
+        ...this._def,
+        doc,
+    });
+}
+
+Object.defineProperty(z.ZodType.prototype, "documentation", {
+    get: function documentation(): SimpleDoc {
+        return this._def.documentation;
+    }
+});
+
+//
 // Internal documentation representation
 //
 
