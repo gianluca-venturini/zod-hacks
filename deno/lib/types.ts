@@ -33,6 +33,11 @@ import {
   ZodIssueCode,
 } from "./ZodError.ts";
 
+interface SimpleDoc {
+  description: string;
+  hidden?: boolean;
+}
+
 ///////////////////////////////////////
 ///////////////////////////////////////
 //////////                   //////////
@@ -56,6 +61,7 @@ export type CustomErrorParams = Partial<util.Omit<ZodCustomIssue, "code">>;
 export interface ZodTypeDef {
   errorMap?: ZodErrorMap;
   description?: string;
+  doc?: SimpleDoc;
 }
 
 class ParseInputLazyPath implements ParseInput {
@@ -143,6 +149,10 @@ export abstract class ZodType<
 
   get description() {
     return this._def.description;
+  }
+
+  get documentation() {
+    return this._def.doc;
   }
 
   abstract _parse(input: ParseInput): ParseReturnType<Output>;
@@ -447,6 +457,14 @@ export abstract class ZodType<
     return new This({
       ...this._def,
       description,
+    });
+  }
+
+  doc(doc: SimpleDoc): this {
+    const This = (this as any).constructor;
+    return new This({
+      ...this._def,
+      doc,
     });
   }
 
