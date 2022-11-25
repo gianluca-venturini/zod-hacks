@@ -83,8 +83,8 @@ const USER = z.object({
   username: USERNAME.doc({ description: 'this is an override' })
 });
 
-/** Creates documentation from a Zod schema. */
-function toDocumentation(field: z.ZodObject<z.ZodRawShape>) {
+/** Creates internal documentation from a Zod schema. */
+function toDocumentation(field: z.ZodAny | z.ZodObject<any>) {
     const doc: InternalSchemaDocumentation<any> = {
         $description: field.documentation?.description ?? '',
         $type: 'unknown',
@@ -97,13 +97,34 @@ function toDocumentation(field: z.ZodObject<z.ZodRawShape>) {
         doc.$type = 'object';
         // eslint-disable-next-line ban/ban
         for (const key of Object.keys(field.shape)) {
-            doc.$fields[key] = toDocumentation(field.shape[key] as z.ZodObject<z.ZodRawShape>);
+            doc.$fields[key] = toDocumentation(field.shape[key]);
         }
     }
     if (field instanceof z.ZodString) {
         doc.$type = 'string';
     }
     return doc;
+}
+
+/**
+ * Makes every attribute .strict() recursively.
+ * Currently .strict() is not applied recursively to all the children, so it's necessary to have a helper function.
+ */
+export function toDeepStrict(field: z.ZodAny | z.ZodObject<any>) {
+    if (field instanceof z.ZodObject) {
+        // eslint-disable-next-line ban/ban
+        for (const key of Object.keys(field.shape)) {
+            field.shape[key] = toDeepStrict(field.shape[key]);
+        }
+        return field.strict();
+    }
+    if (field instanceof z.ZodUnion) {
+        (field._def as any).options = (field._def as any).options.map((o: any) => {
+            return toDeepStrict(o);
+        });
+        return field;
+    }
+    return field; // strict can only be applied to objects
 }
 
 console.log(toDocumentation(USER));
