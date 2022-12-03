@@ -13,7 +13,7 @@ const B = z.object({
     })
 });
 
-// Note that you can't use .strict() on unions
+// Note that you can't use .strict() on unions, you need to use it on single objects composing it
 const C = z.union([A, B]);
 
 // Correctly infers types
@@ -40,5 +40,26 @@ try {
     // but requires a toDeepStrict() function
     console.log(toDeepStrict(C as any).parse({ foo: { a: 'hello', bar: 'hello' } }));
 } catch (error) {}
+
+// Literals
+const Literal = z.union([z.literal("a"), z.literal("b")]);
+export type TypeLiteral = z.infer<typeof Literal>;
+
+// Extends
+const First = z.object({
+    a: z.number(),
+    b: z.number(),
+});
+const Second = z.object({
+    ...First.shape,
+    c: z.string(),
+});
+export type TypeSecond = z.infer<typeof Second>;
+
+// Arrays
+const Array = z.array(z.object({
+    a: z.number(),
+}))
+export type TypeArray = z.infer<typeof Array>;
 
 console.log('end');
